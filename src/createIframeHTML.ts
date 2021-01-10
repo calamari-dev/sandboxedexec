@@ -1,4 +1,4 @@
-import { Library } from "./types";
+import type { Library } from "./types";
 import { serialize } from "./serialize";
 import { workerize } from "./workerize";
 
@@ -113,7 +113,8 @@ const createScript = ({
 
     try {
       const { value, done } = generator.next(result);
-      const json = done ? executed : { ...value, contextId };
+      value.contextId = contextId;
+      const json = done ? executed : value;
       postMessage(json);
     } catch (error) {
       executed.error = error.message;

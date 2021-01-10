@@ -1,4 +1,4 @@
-import { SandboxedExec } from "sandboxedexec";
+import SandboxedExec from "sandboxedexec";
 
 const sandbox = new SandboxedExec({
   worker: true,

@@ -1,4 +1,4 @@
-import { Library } from "./types";
+import type { Library } from "./types";
 
 type SerializedLib = {
   [T in string]?: SerializedLib | null;
@@ -10,7 +10,9 @@ export const serialize = (
 ): SerializedLib => {
   const result: SerializedLib = {};
 
-  Object.entries(library).forEach(([key, value]) => {
+  for (let key of Object.keys(library)) {
+    const value = library[key];
+
     switch (typeof value) {
       case "function": {
         result[key] = null;
@@ -21,7 +23,7 @@ export const serialize = (
         break;
       }
     }
-  });
+  }
 
   return result;
 };

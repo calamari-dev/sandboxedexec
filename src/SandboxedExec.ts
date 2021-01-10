@@ -1,7 +1,8 @@
 import { createId } from "./createId";
 import { createIframeHTML } from "./createIframeHTML";
+import { findLibrary } from "./findLibrary";
 import { isFromSandbox } from "./isFromSandbox";
-import { Library, Result, SandboxedExecConfig } from "./types";
+import type { Result, SandboxedExecConfig } from "./types";
 
 export class SandboxedExec {
   readonly iframe: HTMLIFrameElement;
@@ -26,7 +27,7 @@ export class SandboxedExec {
     iframe.setAttribute("srcdoc", html);
     iframe.setAttribute("style", "display: none;");
 
-    window.addEventListener("message", ({ origin, data }) => {
+    window.addEventListener("message", async ({ origin, data }) => {
       if (origin !== "null") {
         return;
       }
@@ -52,15 +53,14 @@ export class SandboxedExec {
         return;
       }
 
-      const fn = find(library, data.path);
+      const fn = findLibrary(library, data.path);
 
       if (fn) {
         try {
-          Promise.resolve(fn(...data.arguments)).then((result) => {
-            const { contextId } = data;
-            const json = { type: "LIB_RESULT", result, contextId };
-            this.postMessage(json);
-          });
+          const result = await Promise.resolve(fn(...data.arguments));
+          const { contextId } = data;
+          const json = { type: "LIB_RESULT", result, contextId };
+          this.postMessage(json);
         } catch (error) {
           this.onLibError?.(error);
         }
@@ -90,28 +90,3 @@ export class SandboxedExec {
     }
   }
 }
-
-const find = (
-  library: Library,
-  path: string[]
-): ((...x: any[]) => unknown) | null => {
-  let parent: Library = library;
-
-  for (let i = 0; i < path.length; i++) {
-    const current = parent[path[i]];
-
-    switch (typeof current) {
-      case "function": {
-        return current;
-      }
-      case "undefined": {
-        return null;
-      }
-      case "object": {
-        parent = current;
-      }
-    }
-  }
-
-  return null;
-};

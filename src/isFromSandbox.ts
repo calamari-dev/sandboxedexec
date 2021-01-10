@@ -1,4 +1,4 @@
-import { SandboxMessage } from "./types";
+import type { SandboxMessage } from "./types";
 
 export const isFromSandbox = (x: any): x is SandboxMessage => {
   if (typeof x !== "object" || x === null) {

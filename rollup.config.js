@@ -1,46 +1,32 @@
 import typescript from "rollup-plugin-typescript2";
-import { getBabelOutputPlugin } from "@rollup/plugin-babel";
+import { terser } from "rollup-plugin-terser";
 
-export default {
-  input: "./src/index.ts",
-  output: [
-    {
-      file: "./dist/cjs/index.js",
-      format: "cjs",
-      plugins: [
-        getBabelOutputPlugin({
-          presets: [
-            ["@babel/preset-env", { useBuiltIns: "entry", corejs: 3 }],
-            "minify",
-          ],
-        }),
-      ],
+export default [
+  {
+    input: "./src/index.ts",
+    external: [/tslib/],
+    output: [
+      {
+        file: "./dist/cjs/index.js",
+        format: "cjs",
+        exports: "auto",
+      },
+      {
+        file: "./dist/esm/index.js",
+        format: "es",
+        exports: "auto",
+      },
+    ],
+    plugins: [typescript()],
+  },
+  {
+    input: "./src/index.ts",
+    output: {
+      file: "./dist/iife/index.js",
+      format: "iife",
+      name: "SandboxedExec",
+      plugins: [terser({ format: { comments: () => false } })],
     },
-    {
-      file: "./dist/esm/index.js",
-      format: "es",
-      plugins: [
-        getBabelOutputPlugin({
-          presets: [
-            ["@babel/preset-env", { useBuiltIns: "entry", corejs: 3 }],
-            "minify",
-          ],
-        }),
-      ],
-    },
-    {
-      file: "./dist/umd/index.js",
-      format: "esm",
-      plugins: [
-        getBabelOutputPlugin({
-          presets: [
-            ["@babel/preset-env", { useBuiltIns: "entry", corejs: 3 }],
-            "minify",
-          ],
-          plugins: ["@babel/plugin-transform-modules-umd"],
-        }),
-      ],
-    },
-  ],
-  plugins: [typescript()],
-};
+    plugins: [typescript()],
+  },
+];
