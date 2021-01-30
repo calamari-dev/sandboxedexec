@@ -1,27 +1,45 @@
-export const workerize = (sandboxId: string, script: string): string => `\
+interface Config {
+  sandboxId: string;
+  script: string;
+}
+
+export const workerize = ({ sandboxId, script }: Config): string => `\
 (() => {
   "use strict";
   const blob = new Blob([\`${script}\`], { type: "text/javascript" });
   const url = URL.createObjectURL(blob);
   let worker = null;
 
+  const postParent = (json) => {
+    window.parent.postMessage(json, "*");
+  }
+
   window.addEventListener("message", ({ data }) => {
-    if (data["type"] === "EXEC_TERMINATE") {
-      worker && worker.terminate();
-      worker = null;
+    if (data["type"] === "EXEC_CALL") {
+      if (!worker) {
+        worker = new Worker(url);
+        worker.onmessage = ({ data }) => {
+          data.sandboxId = "${sandboxId}";
+          postParent(data);
+        };
+      }
+
+      worker.postMessage(data);
       return;
     }
 
-    if (!worker) {
-      worker = new Worker(url);      
-      worker.onmessage = ({ data }) => {
-        window.parent.postMessage(data, "*");
-      };
+    if (data["type"] === "EXEC_TERMINATE") {
+      worker.terminate();
+      worker = null;
+      postParent({ type: "TERMINATED", sandboxId: "${sandboxId}" });
+      return;
     }
 
-    worker.postMessage(data);
+    if (data["type"] === "LIB_RESULT") {
+      worker.postMessage(data);
+    }
   });
 
-  window.parent.postMessage({ sandboxId: "${sandboxId}", type: "INIT" }, "*");
+  postParent({ type: "INIT", sandboxId: "${sandboxId}" }, "*");
 })();
 `;

@@ -1,33 +1,45 @@
 export interface SandboxedExecConfig {
   output?: string;
   library?: Library;
-  worker?: boolean;
+  timeout?: number;
 }
 
 export type Library = {
   [T in string]?: Library | ((...x: any[]) => unknown);
 };
 
-export type Result = {
-  result: Record<string, unknown>;
-  error: string | null;
-};
-
-export type SandboxMessage =
+export type Result =
   | {
-      sandboxId: string;
-      type: "INIT";
-    }
-  | {
-      sandboxId: string;
-      type: "EXEC_RESULT";
+      status: "Executed";
       result: Record<string, unknown>;
       error: string | null;
     }
   | {
+      status: "Library Error";
+      libraryError: string | null;
+    }
+  | {
+      status: "Terminated";
+    };
+
+export type SandboxMessage =
+  | {
+      type: "INIT";
       sandboxId: string;
+    }
+  | {
+      type: "EXEC_RESULT";
+      sandboxId: string;
+      result: Record<string, unknown>;
+      error: string | null;
+    }
+  | {
+      type: "TERMINATED";
+      sandboxId: string;
+    }
+  | {
       type: "LIB_CALL";
-      contextId: string;
+      sandboxId: string;
       path: string[];
       arguments: unknown[];
     };

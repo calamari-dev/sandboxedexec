@@ -9,16 +9,15 @@ export const isFromSandbox = (x: any): x is SandboxMessage => {
     return false;
   }
 
-  if (x["type"] === "INIT") {
+  if (x["type"] === "INIT" || x["type"] === "TERMINATE") {
     return true;
   }
 
   if (x["type"] === "LIB_CALL") {
     const y = x["path"];
     const path = Array.isArray(y) && y.every((x) => typeof x === "string");
-    const cid = typeof x["contextId"] === "string";
     const args = Array.isArray(x["arguments"]);
-    return path && cid && args;
+    return path && args;
   }
 
   if (x["type"] === "EXEC_RESULT") {

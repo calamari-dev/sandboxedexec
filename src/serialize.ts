@@ -1,14 +1,14 @@
 import type { Library } from "./types";
 
-type SerializedLib = {
-  [T in string]?: SerializedLib | null;
+type SerializedLibrary = {
+  [T in string]?: SerializedLibrary | null;
 };
 
 export const serialize = (
   library: Library,
   path: string[] = []
-): SerializedLib => {
-  const result: SerializedLib = {};
+): SerializedLibrary => {
+  const result: SerializedLibrary = {};
 
   for (let key of Object.keys(library)) {
     const value = library[key];

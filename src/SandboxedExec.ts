@@ -1,33 +1,41 @@
 import { createId } from "./createId";
 import { createIframeHTML } from "./createIframeHTML";
-import { findLibrary } from "./findLibrary";
+import { createSuspenseRunner, SuspenseRunner } from "./createSuspenseRunner";
 import { isFromSandbox } from "./isFromSandbox";
 import type { Result, SandboxedExecConfig } from "./types";
 
+interface Suspense {
+  script: string;
+  callback: (x: Result) => void;
+}
+
 export class SandboxedExec {
   readonly iframe: HTMLIFrameElement;
-  onExecuted?: (x: Result) => unknown;
-  onLibError?: (x: unknown) => unknown;
+  readonly timeout?: number;
 
-  private cue: unknown[] = [];
+  private runSuspense: SuspenseRunner;
   private loaded: boolean = false;
+  private queue: Set<Suspense> = new Set();
+  private terminate: (() => void) | null = null;
 
   constructor({
     output = "output",
     library = {},
-    worker = false,
+    timeout,
   }: SandboxedExecConfig = {}) {
-    this.iframe = document.createElement("iframe");
-
-    const iframe = this.iframe;
+    const iframe = document.createElement("iframe");
     const sandboxId = createId();
-    const html = createIframeHTML({ output, library, worker, sandboxId });
+    const html = createIframeHTML({ sandboxId, output, library });
 
     iframe.setAttribute("sandbox", "allow-scripts");
     iframe.setAttribute("srcdoc", html);
     iframe.setAttribute("style", "display: none;");
 
-    window.addEventListener("message", async ({ origin, data }) => {
+    this.iframe = iframe;
+    this.timeout = timeout;
+    this.runSuspense = createSuspenseRunner({ iframe, sandboxId, library });
+
+    const eventHandler = async ({ origin, data }: MessageEvent<unknown>) => {
       if (origin !== "null") {
         return;
       }
@@ -38,55 +46,58 @@ export class SandboxedExec {
 
       if (data.type === "INIT") {
         this.loaded = true;
-
-        while (this.cue.length !== 0) {
-          const json = this.cue.shift();
-          iframe.contentWindow?.postMessage(json, "*");
-        }
-
-        return;
+        this.startExecution();
+        window.removeEventListener("message", eventHandler);
       }
+    };
 
-      if (data.type === "EXEC_RESULT") {
-        const json = { result: data.result, error: data.error };
-        this.onExecuted?.(json);
-        return;
-      }
+    window.addEventListener("message", eventHandler, false);
+  }
 
-      const fn = findLibrary(library, data.path);
+  exec(script: string, callback: (x: Result) => void): () => void {
+    const suspense = { script, callback };
+    this.queue.add(suspense);
 
-      if (fn) {
-        try {
-          const result = await Promise.resolve(fn(...data.arguments));
-          const { contextId } = data;
-          const json = { type: "LIB_RESULT", result, contextId };
-          this.postMessage(json);
-        } catch (error) {
-          this.onLibError?.(error);
-        }
+    if (this.loaded && this.queue.size === 0) {
+      this.startExecution();
+    }
+
+    return () => {
+      if (this.loaded && suspense === this.getCurrentSuspense()) {
+        this.terminate?.();
       } else {
-        this.onLibError?.(
-          new Error(`Library ${data.path.join(".")} is not registered.`)
-        );
+        this.queue.delete(suspense);
       }
+    };
+  }
+
+  cancelAll() {
+    this.queue.clear();
+    this.terminate?.();
+  }
+
+  private getCurrentSuspense(): Suspense | null {
+    const firstItem = this.queue.values().next();
+    return firstItem.done ? null : firstItem.value;
+  }
+
+  private startExecution() {
+    const suspense = this.getCurrentSuspense();
+
+    if (!suspense) {
+      return;
+    }
+
+    const terminate = this.runSuspense(suspense.script, (result) => {
+      suspense.callback(result);
+      this.queue.delete(suspense);
+      this.startExecution();
     });
-  }
 
-  execute(script: string) {
-    const json = { type: "EXEC_CALL", script };
-    this.postMessage(json);
-  }
+    this.terminate = terminate;
 
-  terminate() {
-    const json = { type: "EXEC_TERMINATE" };
-    this.postMessage(json);
-  }
-
-  private postMessage(json: unknown) {
-    if (this.loaded) {
-      this.iframe.contentWindow?.postMessage(json, "*");
-    } else {
-      this.cue.push(json);
+    if (this.timeout !== undefined) {
+      window.setTimeout(terminate, this.timeout);
     }
   }
 }
