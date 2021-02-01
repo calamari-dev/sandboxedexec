@@ -5,41 +5,55 @@
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "jsdelivr": "dist/iife/index.js",
   "unpkg": "dist/iife/index.js",
   "scripts": {
+    "start": "karma start",
+    "test": "karma start --single-run",
     "prebuild": "rimraf dist",
-    "build:js": "rollup --config ./rollup.config.js",
-    "build:dts": "tsc src/index.ts --target ESNext --declaration true --emitDeclarationOnly --outDir dist/types",
+    "build:ts": "rollup --config ./rollup.config.js",
+    "build:dts": "tsc ./src/index.ts --outDir dist/types --target ESNext --declaration --emitDeclarationOnly --skipLibCheck",
     "build": "npm-run-all build:*"
   },
   "author": "calamari-dev <pacific.flying.squid+calamari@gmail.com> (https://github.com/calamari-dev)",
   "license": "MIT",
+  "dependencies": {
+    "tslib": "^2.1.0"
+  },
   "devDependencies": {
+    "@types/jasmine": "^3.6.3",
     "@typescript-eslint/eslint-plugin": "^4.12.0",
     "@typescript-eslint/parser": "^4.12.0",
     "eslint": "^7.17.0",
     "eslint-plugin-prettier": "^3.3.1",
     "husky": "^4.3.6",
+    "jasmine-core": "^3.6.0",
+    "karma": "^6.0.3",
+    "karma-chrome-launcher": "^3.1.0",
+    "karma-jasmine": "^4.0.1",
+    "karma-spec-reporter": "0.0.32",
+    "karma-webpack": "^5.0.0-alpha.6",
     "lint-staged": "^10.5.3",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.2.1",
+    "puppeteer": "^5.5.0",
     "rimraf": "^3.0.2",
     "rollup": "^2.36.1",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.29.0",
-    "typescript": "^4.1.3"
+    "ts-loader": "^8.0.14",
+    "typescript": "^4.1.3",
+    "webpack": "^5.19.0"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged"
+      "pre-commit": "lint-staged && npm test"
     }
   },
   "lint-staged": {
     "*.ts": "eslint --cache --fix"
-  },
-  "dependencies": {
-    "tslib": "^2.1.0"
   }
 }

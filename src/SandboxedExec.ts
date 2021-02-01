@@ -1,8 +1,8 @@
 import { createId } from "./createId";
 import { createIframeHTML } from "./createIframeHTML";
-import { createSuspenseRunner, SuspenseRunner } from "./createSuspenseRunner";
+import { createSuspenseRunner } from "./createSuspenseRunner";
 import { isFromSandbox } from "./isFromSandbox";
-import type { Result, SandboxedExecConfig } from "./types";
+import type { Result, SandboxedExecConfig, SuspenseRunner } from "./types";
 
 interface Suspense {
   script: string;
@@ -58,20 +58,36 @@ export class SandboxedExec {
     const suspense = { script, callback };
     this.queue.add(suspense);
 
-    if (this.loaded && this.queue.size === 0) {
+    if (this.loaded && this.queue.size === 1) {
       this.startExecution();
     }
 
     return () => {
+      if (!this.queue.has(suspense)) {
+        return;
+      }
+
       if (this.loaded && suspense === this.getCurrentSuspense()) {
+        this.queue.delete(suspense);
         this.terminate?.();
       } else {
         this.queue.delete(suspense);
+        suspense.callback({ status: "Revoked" });
       }
     };
   }
 
-  cancelAll() {
+  stopAll() {
+    const current = this.getCurrentSuspense();
+
+    if (current) {
+      this.queue.delete(current);
+    }
+
+    this.queue.forEach(({ callback }) => {
+      callback({ status: "Revoked" });
+    });
+
     this.queue.clear();
     this.terminate?.();
   }

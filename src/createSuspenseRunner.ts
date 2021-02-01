@@ -1,6 +1,6 @@
 import { findLibrary } from "./findLibrary";
 import { isFromSandbox } from "./isFromSandbox";
-import type { Library, Result } from "./types";
+import type { Library, Result, SuspenseRunner } from "./types";
 
 interface Config {
   iframe: HTMLIFrameElement;
@@ -8,21 +8,16 @@ interface Config {
   library: Library;
 }
 
-export type SuspenseRunner = (
-  script: string,
-  callback: (x: Result) => void
-) => () => void;
-
 export const createSuspenseRunner = (config: Config): SuspenseRunner => {
   const { iframe, sandboxId, library } = config;
-  const contentWindow = iframe.contentWindow;
-
-  if (!contentWindow) {
-    throw new Error("This iframe has not loaded yet.");
-  }
 
   return (script: string, callback: (x: Result) => void) => {
+    const { contentWindow } = iframe;
     let done = false;
+
+    if (!contentWindow) {
+      throw new Error("This iframe has not loaded yet.");
+    }
 
     const eventHandler = async ({ origin, data }: MessageEvent<unknown>) => {
       if (origin !== "null") {
@@ -55,9 +50,9 @@ export const createSuspenseRunner = (config: Config): SuspenseRunner => {
         }
 
         case "EXEC_RESULT": {
-          const { result, error } = data;
+          const { outputs, error } = data;
           window.removeEventListener("message", eventHandler);
-          callback({ status: "Executed", result, error });
+          callback({ status: "Executed", outputs, error });
           done = true;
           return;
         }

@@ -11,31 +11,31 @@ export const createWorkerScript = ({ output, library }: Config) => `\
   "use strict";
   const GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor;
   const deserialize = (library, path = []) => {
-    const result = {};
+    const deserialized = {};
 
     for (let key of Object.keys(library)) {
       const value = library[key];
 
       if (value === null) {
-        result[key] = (...args) => ({
+        deserialized[key] = (...args) => ({
           type: "LIB_CALL",
           path: [...path, key],
           arguments: args
         });
       } else {
-        result[key] = deserialize(value, [...path, key]);
+        deserialized[key] = deserialize(value, [...path, key]);
       }
     }
 
-    return result;
+    return deserialized;
   };
 
   const libEntries = deserialize(${JSON.stringify(serialize(library))});
-  const execResult = { type: "EXEC_RESULT", result: {}, error: null };
+  const execResult = { type: "EXEC_RESULT", outputs: {}, error: null };
   let generator = null;
 
   const output = (name, target) => {
-    execResult.result[name] = target;
+    execResult.outputs[name] = target;
   };
 
   self.addEventListener("message", ({ data }) => {
@@ -44,17 +44,17 @@ export const createWorkerScript = ({ output, library }: Config) => `\
     }
 
     if (data["type"] === "EXEC_CALL") {
-      execResult.result = {};
+      execResult.outputs = {};
       execResult.error = null;
 
       try {
-        const script = data.script;
+        const { script } = data;
         const gfn = new GeneratorFunction("${output}", ...Object.keys(libEntries), script);
         generator = gfn(output, ...Object.values(libEntries));
       } catch (error) {
         generator = null;
         execResult.error = error.toString();
-        self.postMessage(JSON.stringify(execResult));
+        self.postMessage(execResult);
       }
     }
 

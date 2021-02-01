@@ -15,31 +15,34 @@ export const workerize = ({ sandboxId, script }: Config): string => `\
   }
 
   window.addEventListener("message", ({ data }) => {
-    if (data["type"] === "EXEC_CALL") {
-      if (!worker) {
-        worker = new Worker(url);
-        worker.onmessage = ({ data }) => {
-          data.sandboxId = "${sandboxId}";
-          postParent(data);
-        };
+    switch(data["type"]) {
+      case "EXEC_CALL": {
+        if (!worker) {
+          worker = new Worker(url);
+          worker.onmessage = ({ data }) => {
+            data.sandboxId = "${sandboxId}";
+            postParent(data);
+          };
+        }
+
+        worker.postMessage(data);
+        return;
       }
 
-      worker.postMessage(data);
-      return;
-    }
+      case "EXEC_TERMINATE": {
+        worker.terminate();
+        worker = null;
+        postParent({ type: "TERMINATED", sandboxId: "${sandboxId}" });
+        return;
+      }
 
-    if (data["type"] === "EXEC_TERMINATE") {
-      worker.terminate();
-      worker = null;
-      postParent({ type: "TERMINATED", sandboxId: "${sandboxId}" });
-      return;
+      case "LIB_RESULT": {
+        worker.postMessage(data);
+        return;
+      }
     }
+  }, false);
 
-    if (data["type"] === "LIB_RESULT") {
-      worker.postMessage(data);
-    }
-  });
-
-  postParent({ type: "INIT", sandboxId: "${sandboxId}" }, "*");
+  postParent({ type: "INIT", sandboxId: "${sandboxId}" });
 })();
 `;
