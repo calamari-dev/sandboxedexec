@@ -1,22 +1,11 @@
-import { createId } from "./createId";
 import { createIframeHTML } from "./createIframeHTML";
-import { createSuspenseRunner } from "./createSuspenseRunner";
-import { isFromSandbox } from "./isFromSandbox";
-import type { Result, SandboxedExecConfig, SuspenseRunner } from "./types";
-
-interface Suspense {
-  script: string;
-  callback: (x: Result) => void;
-}
+import { IframeMessenger } from "./messenger";
+import { SuspenseManager } from "./SuspenseManager";
+import type { Result, SandboxedExecConfig } from "./types";
 
 export class SandboxedExec {
   readonly iframe: HTMLIFrameElement;
-  readonly timeout?: number;
-
-  private runSuspense: SuspenseRunner;
-  private loaded: boolean = false;
-  private queue: Set<Suspense> = new Set();
-  private terminate: (() => void) | null = null;
+  private suspenseManager: SuspenseManager;
 
   constructor({
     output = "output",
@@ -24,96 +13,22 @@ export class SandboxedExec {
     timeout,
   }: SandboxedExecConfig = {}) {
     const iframe = document.createElement("iframe");
-    const sandboxId = createId();
-    const html = createIframeHTML({ sandboxId, output, library });
+    const html = createIframeHTML({ output, library });
+    const messenger = new IframeMessenger(iframe);
 
     iframe.setAttribute("sandbox", "allow-scripts");
     iframe.setAttribute("srcdoc", html);
     iframe.setAttribute("style", "display: none;");
 
     this.iframe = iframe;
-    this.timeout = timeout;
-    this.runSuspense = createSuspenseRunner({ iframe, sandboxId, library });
-
-    const eventHandler = async ({ origin, data }: MessageEvent<unknown>) => {
-      if (origin !== "null") {
-        return;
-      }
-
-      if (!isFromSandbox(data) || data.sandboxId !== sandboxId) {
-        return;
-      }
-
-      if (data.type === "INIT") {
-        this.loaded = true;
-        this.startExecution();
-        window.removeEventListener("message", eventHandler);
-      }
-    };
-
-    window.addEventListener("message", eventHandler, false);
+    this.suspenseManager = new SuspenseManager({ messenger, library, timeout });
   }
 
   exec(script: string, callback: (x: Result) => void): () => void {
-    const suspense = { script, callback };
-    this.queue.add(suspense);
-
-    if (this.loaded && this.queue.size === 1) {
-      this.startExecution();
-    }
-
-    return () => {
-      if (!this.queue.has(suspense)) {
-        return;
-      }
-
-      if (this.loaded && suspense === this.getCurrentSuspense()) {
-        this.queue.delete(suspense);
-        this.terminate?.();
-      } else {
-        this.queue.delete(suspense);
-        suspense.callback({ status: "Revoked" });
-      }
-    };
+    return this.suspenseManager.exec(script, callback);
   }
 
   stopAll() {
-    const current = this.getCurrentSuspense();
-
-    if (current) {
-      this.queue.delete(current);
-    }
-
-    this.queue.forEach(({ callback }) => {
-      callback({ status: "Revoked" });
-    });
-
-    this.queue.clear();
-    this.terminate?.();
-  }
-
-  private getCurrentSuspense(): Suspense | null {
-    const firstItem = this.queue.values().next();
-    return firstItem.done ? null : firstItem.value;
-  }
-
-  private startExecution() {
-    const suspense = this.getCurrentSuspense();
-
-    if (!suspense) {
-      return;
-    }
-
-    const terminate = this.runSuspense(suspense.script, (result) => {
-      suspense.callback(result);
-      this.queue.delete(suspense);
-      this.startExecution();
-    });
-
-    this.terminate = terminate;
-
-    if (this.timeout !== undefined) {
-      window.setTimeout(terminate, this.timeout);
-    }
+    this.suspenseManager.stopAll();
   }
 }

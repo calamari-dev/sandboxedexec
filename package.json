@@ -15,7 +15,7 @@
     "test": "karma start --single-run",
     "prebuild": "rimraf dist",
     "build:ts": "rollup --config ./rollup.config.js",
-    "build:dts": "tsc ./src/index.ts --outDir dist/types --target ESNext --declaration --emitDeclarationOnly --skipLibCheck",
+    "build:dts": "tsc ./src/index.ts --moduleResolution node --outDir dist/types --target ESNext --declaration --emitDeclarationOnly --skipLibCheck",
     "build": "npm-run-all build:*"
   },
   "author": "calamari-dev <pacific.flying.squid+calamari@gmail.com> (https://github.com/calamari-dev)",

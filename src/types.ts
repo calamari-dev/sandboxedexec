@@ -1,4 +1,3 @@
-// Public Typings
 export interface SandboxedExecConfig {
   output?: string;
   library?: Library;
@@ -11,6 +10,9 @@ export type Library = {
 
 export type Result =
   | {
+      status: "Terminated" | "Revoked";
+    }
+  | {
       status: "Executed";
       outputs: Record<string, unknown>;
       error: string | null;
@@ -18,35 +20,4 @@ export type Result =
   | {
       status: "Library Error";
       libraryError: string | null;
-    }
-  | {
-      status: "Terminated" | "Revoked";
-    };
-
-// Private Typings
-export type SuspenseRunner = (
-  script: string,
-  callback: (x: Result) => void
-) => () => void;
-
-export type SandboxMessage =
-  | {
-      type: "INIT";
-      sandboxId: string;
-    }
-  | {
-      type: "EXEC_RESULT";
-      sandboxId: string;
-      outputs: Record<string, unknown>;
-      error: string | null;
-    }
-  | {
-      type: "TERMINATED";
-      sandboxId: string;
-    }
-  | {
-      type: "LIB_CALL";
-      sandboxId: string;
-      path: string[];
-      arguments: unknown[];
     };

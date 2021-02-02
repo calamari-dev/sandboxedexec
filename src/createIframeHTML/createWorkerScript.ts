@@ -1,5 +1,5 @@
-import { serialize } from "./serialize";
-import type { Library } from "./types";
+import { serializeLibrary } from "./serializeLibrary";
+import type { Library } from "../types";
 
 interface Config {
   output: string;
@@ -30,7 +30,7 @@ export const createWorkerScript = ({ output, library }: Config) => `\
     return deserialized;
   };
 
-  const libEntries = deserialize(${JSON.stringify(serialize(library))});
+  const libEntries = deserialize(${JSON.stringify(serializeLibrary(library))});
   const execResult = { type: "EXEC_RESULT", outputs: {}, error: null };
   let generator = null;
 
@@ -39,11 +39,11 @@ export const createWorkerScript = ({ output, library }: Config) => `\
   };
 
   self.addEventListener("message", ({ data }) => {
-    if (["EXEC_CALL", "LIB_RESULT"].every((x) => x !== data["type"])) {
+    if (["EXEC_CALL", "LIB_RESULT"].every((x) => x !== data.type)) {
       return;
     }
 
-    if (data["type"] === "EXEC_CALL") {
+    if (data.type === "EXEC_CALL") {
       execResult.outputs = {};
       execResult.error = null;
 
@@ -62,7 +62,7 @@ export const createWorkerScript = ({ output, library }: Config) => `\
       return;
     }
 
-    const result = data["type"] === "LIB_RESULT" ? data.result : undefined;
+    const result = data.type === "LIB_RESULT" ? data.result : undefined;
 
     try {
       const { value, done } = generator.next(result);

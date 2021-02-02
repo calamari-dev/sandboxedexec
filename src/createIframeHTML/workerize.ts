@@ -1,9 +1,4 @@
-interface Config {
-  sandboxId: string;
-  script: string;
-}
-
-export const workerize = ({ sandboxId, script }: Config): string => `\
+export const workerize = (script: string): string => `\
 (() => {
   "use strict";
   const blob = new Blob([\`${script}\`], { type: "text/javascript" });
@@ -15,12 +10,11 @@ export const workerize = ({ sandboxId, script }: Config): string => `\
   }
 
   window.addEventListener("message", ({ data }) => {
-    switch(data["type"]) {
+    switch(data.type) {
       case "EXEC_CALL": {
         if (!worker) {
           worker = new Worker(url);
           worker.onmessage = ({ data }) => {
-            data.sandboxId = "${sandboxId}";
             postParent(data);
           };
         }
@@ -32,7 +26,7 @@ export const workerize = ({ sandboxId, script }: Config): string => `\
       case "EXEC_TERMINATE": {
         worker.terminate();
         worker = null;
-        postParent({ type: "TERMINATED", sandboxId: "${sandboxId}" });
+        postParent({ type: "TERMINATED" });
         return;
       }
 
@@ -43,6 +37,6 @@ export const workerize = ({ sandboxId, script }: Config): string => `\
     }
   }, false);
 
-  postParent({ type: "INIT", sandboxId: "${sandboxId}" });
+  postParent({ type: "INIT" });
 })();
 `;

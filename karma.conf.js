@@ -10,9 +10,9 @@ module.exports = function (config) {
       "karma-chrome-launcher",
       "karma-spec-reporter",
     ],
-    files: ["test/**/*.ts"],
+    files: ["__tests__/**/*.ts", "src/**/*.spec.ts"],
     exclude: [],
-    preprocessors: { "test/**/*.ts": ["webpack"] },
+    preprocessors: { "**/*.ts": ["webpack"] },
     webpack: {
       module: {
         rules: [

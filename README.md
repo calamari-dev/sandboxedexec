@@ -24,14 +24,14 @@ const stop = sandbox.exec(`output("sum", yield add(1, 2))`, (result) => {
   }
 });
 
-// 4. Cancel (If you want)
+// 4. Stop (If you want)
 stop(); // or sandbox.stopAll();
 
 ```
 
 ## Sketch of Implementation
 
-Please see this [sequence diagram](https://mermaid.ink/svg/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG5wYXJ0aWNpcGFudCB1c2VyIGFzIHVzZXJcbnBhcnRpY2lwYW50IHJjdHggYXMgU2FuZGJveGVkRXhlY1xucGFydGljaXBhbnQgaWN0eCBhcyBpZnJhbWVcbnBhcnRpY2lwYW50IHdrZXIgYXMgd29ya2VyXG5cbk5vdGUgb3ZlciB1c2VyOiBleGVjKHNjcmlwdCwgY2FsbGJhY2spXG51c2VyIC0-PiByY3R4OiBzZW5kIHNjcmlwdFxuTm90ZSBvdmVyIHJjdHg6IHdhaXQgaWZyYW1lJ3Mgb25sb2FkXG5yY3R4IC0-PiB3a2VyOiBzZW5kIHNjcmlwdFxuTm90ZSBvdmVyIHdrZXI6IGNyZWF0ZSBnZW5lcmF0b3Jcbk5vdGUgb3ZlciB3a2VyOiBuZXh0KClcblxubG9vcCByZXNvbHZlIGxpYnJhcnkgY2FsbHNcbiAgd2tlciAtLT4-IHJjdHg6IGNhbGwgbGlicmFyeVxuICBOb3RlIG92ZXIgcmN0eDogZXhlYyBsaWJyYXJ5XG4gIHJjdHggLT4-IHdrZXI6IHNlbmQgcmVzdWx0XG4gIE5vdGUgb3ZlciB3a2VyOiBuZXh0KHJlc3VsdClcbmVuZFxuXG5vcHQgY2FuY2VsXG4gIE5vdGUgb3ZlciB1c2VyOiBjYW5jZWwoKSAvIGNhbmNlbEFsbCgpXG4gIHVzZXIgLT4-IGljdHg6IHJlcXVlc3QgY2FuY2VsXG4gIE5vdGUgb3ZlciBpY3R4OiB3b3JrZXIudGVybWluYXRlKClcbmVuZFxuXG53a2VyIC0tPj4gdXNlcjogcmV0dXJuIG91dHB1dFxuIiwibWVybWFpZCI6e30sInVwZGF0ZUVkaXRvciI6ZmFsc2V9). Below is the diagram's code written in mermaid.
+Please see this [sequence diagram](https://mermaid.ink/svg/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG5wYXJ0aWNpcGFudCB1c2VyIGFzIHVzZXJcbnBhcnRpY2lwYW50IHJjdHggYXMgU2FuZGJveGVkRXhlY1xucGFydGljaXBhbnQgaWN0eCBhcyBpZnJhbWVcbnBhcnRpY2lwYW50IHdrZXIgYXMgd29ya2VyXG5cbk5vdGUgb3ZlciB1c2VyOiBleGVjKHNjcmlwdCwgY2FsbGJhY2spXG51c2VyIC0-PiByY3R4OiBzZW5kIHNjcmlwdFxuTm90ZSBvdmVyIHJjdHg6IHdhaXQgaWZyYW1lJ3Mgb25sb2FkXG5yY3R4IC0-PiB3a2VyOiBzZW5kIHNjcmlwdFxuTm90ZSBvdmVyIHdrZXI6IGNyZWF0ZSBnZW5lcmF0b3Jcbk5vdGUgb3ZlciB3a2VyOiBuZXh0KClcblxubG9vcCByZXNvbHZlIGxpYnJhcnkgY2FsbHNcbiAgd2tlciAtLT4-IHJjdHg6IGNhbGwgbGlicmFyeVxuICBOb3RlIG92ZXIgcmN0eDogZXhlYyBsaWJyYXJ5XG4gIHJjdHggLT4-IHdrZXI6IHNlbmQgcmVzdWx0XG4gIE5vdGUgb3ZlciB3a2VyOiBuZXh0KHJlc3VsdClcbmVuZFxuXG5vcHQgc3RvcFxuICBOb3RlIG92ZXIgdXNlcjogc3RvcCgpIC8gc3RvcGxBbGwoKVxuICB1c2VyIC0-PiBpY3R4OiByZXF1ZXN0IHN0b3BcbiAgTm90ZSBvdmVyIGljdHg6IHdvcmtlci50ZXJtaW5hdGUoKVxuZW5kXG5cbndrZXIgLS0-PiB1c2VyOiByZXR1cm4gb3V0cHV0XG4iLCJtZXJtYWlkIjp7fSwidXBkYXRlRWRpdG9yIjpmYWxzZX0). Below is the diagram's code written in mermaid.
 
 ```mermaid
 sequenceDiagram
@@ -54,9 +54,9 @@ loop resolve library calls
   Note over wker: next(result)
 end
 
-opt cancel
-  Note over user: cancel() / cancelAll()
-  user ->> ictx: request cancel
+opt stop
+  Note over user: stop() / stopAll()
+  user ->> ictx: request stop
   Note over ictx: worker.terminate()
 end
 

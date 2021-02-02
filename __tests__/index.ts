@@ -32,14 +32,16 @@ const spec = {
 
     return new Promise((resolve) => {
       sandbox.exec(script, (result) => {
-        expect(result.status).toBe("Executed");
-        if (result.status !== "Executed") return;
-        expect(result.outputs.sum).toBe(3);
-        expect(result.outputs.con).toBe("ab");
+        expect(result).toEqual({
+          status: "Executed",
+          outputs: { sum: 3, con: "ab" },
+          error: null,
+        });
         resolve(null);
       });
     });
   },
+
   ordinalB: (sandbox: SandboxedExec, output: string) => {
     const script =
       `${output}("shifted", yield ordinalB.shift([3, 1, 2]));` +
@@ -47,14 +49,16 @@ const spec = {
 
     return new Promise((resolve) => {
       sandbox.exec(script, (result) => {
-        expect(result.status).toBe("Executed");
-        if (result.status !== "Executed") return;
-        expect(result.outputs.shifted).toEqual([1, 2, 3]);
-        expect(result.outputs.answer).toBe(true);
+        expect(result).toEqual({
+          status: "Executed",
+          outputs: { shifted: [1, 2, 3], answer: true },
+          error: null,
+        });
         resolve(null);
       });
     });
   },
+
   termination: (sandbox: SandboxedExec) => {
     return new Promise((resolve) => {
       sandbox.exec(`while (1);`, ({ status }) => {
@@ -63,6 +67,7 @@ const spec = {
       });
     });
   },
+
   revoking: (sandbox: SandboxedExec) => {
     return new Promise((resolve) => {
       sandbox.exec(`while (1);`, ({ status }) => {
@@ -71,22 +76,27 @@ const spec = {
       });
     });
   },
+
   libraryError: (sandbox: SandboxedExec) => {
     return new Promise((resolve) => {
       sandbox.exec(`yield libraryError();`, (result) => {
-        expect(result.status).toBe("Library Error");
-        if (result.status !== "Library Error") return;
-        expect(result.libraryError).toBe("Error: B");
+        expect(result).toEqual({
+          status: "Library Error",
+          libraryError: "Error: B",
+        });
         resolve(null);
       });
     });
   },
+
   scriptError: (sandbox: SandboxedExec) => {
     return new Promise((resolve) => {
       sandbox.exec(`throw new Error("A");`, (result) => {
-        expect(result.status).toBe("Executed");
-        if (result.status !== "Executed") return;
-        expect(result.error).toBe("Error: A");
+        expect(result).toEqual({
+          status: "Executed",
+          outputs: {},
+          error: "Error: A",
+        });
         resolve(null);
       });
     });
@@ -169,9 +179,11 @@ it("Revoking & Re-Start", (done) => {
     expect(status).toBe("Revoked");
 
     sandbox.exec(`output("x", 1);`, (result) => {
-      expect(result.status).toBe("Executed");
-      if (result.status !== "Executed") return;
-      expect(result.outputs.x).toBe(1);
+      expect(result).toEqual({
+        status: "Executed",
+        outputs: { x: 1 },
+        error: null,
+      });
       done();
     });
   });

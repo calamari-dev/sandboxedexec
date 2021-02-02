@@ -1,4 +1,4 @@
-import type { Library } from "./types";
+import type { Library } from "../types";
 
 export const findLibrary = (
   library: Library,

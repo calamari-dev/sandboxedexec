@@ -1,10 +1,10 @@
-import type { Library } from "./types";
+import type { Library } from "../types";
 
 type SerializedLibrary = {
   [T in string]?: SerializedLibrary | null;
 };
 
-export const serialize = (
+export const serializeLibrary = (
   library: Library,
   path: string[] = []
 ): SerializedLibrary => {
@@ -19,7 +19,7 @@ export const serialize = (
         break;
       }
       case "object": {
-        result[key] = serialize(value, [...path, key]);
+        result[key] = serializeLibrary(value, [...path, key]);
         break;
       }
     }
