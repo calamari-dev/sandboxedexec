@@ -1,10 +1,10 @@
 import { serializeLibrary } from "./serializeLibrary";
 
 const library = {
-  A: () => null,
+  A: () => 0,
   B: {
-    C: () => null,
-    D: { E: () => null },
+    C: () => 0,
+    D: { E: () => 0 },
   },
 } as const;
 

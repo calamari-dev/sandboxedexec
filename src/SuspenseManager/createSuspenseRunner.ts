@@ -27,10 +27,12 @@ export const createSuspenseRunner = (config: Config): SuspenseRunner => {
               throw new Error(`Couldn't find "${data.path.join(".")}".`);
             }
           } catch (error) {
-            const libraryError: string = error.toString();
-            callback({ status: "Library Error", libraryError });
-            unsubscribe();
-            done = true;
+            if (!done) {
+              const libraryError: string = error.toString();
+              callback({ status: "Library Error", libraryError });
+              unsubscribe();
+              done = true;
+            }
           }
 
           return;
