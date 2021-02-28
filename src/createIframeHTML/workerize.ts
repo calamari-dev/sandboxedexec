@@ -7,7 +7,7 @@ export const workerize = (script: string): string => `\
 
   const postParent = (json) => {
     window.parent.postMessage(json, "*");
-  }
+  };
 
   window.addEventListener("message", ({ data }) => {
     switch(data.type) {

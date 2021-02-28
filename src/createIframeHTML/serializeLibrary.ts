@@ -18,6 +18,7 @@ export const serializeLibrary = (
         result[key] = null;
         break;
       }
+
       case "object": {
         result[key] = serializeLibrary(value, [...path, key]);
         break;

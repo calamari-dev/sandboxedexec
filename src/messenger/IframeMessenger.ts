@@ -8,9 +8,7 @@ export class IframeMessenger implements Messenger {
   }
 
   subscribe(subscriber: (x: SandboxMessage) => void): () => void {
-    const eventHandler = (event: MessageEvent<unknown>) => {
-      const { data, origin, source } = event;
-
+    const eventHandler = ({ data, origin, source }: MessageEvent<unknown>) => {
       if (origin !== "null" || source !== this.iframe.contentWindow) {
         return;
       }
